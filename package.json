@@ -1,0 +1,16 @@
+{
+  "name": "teams-admin-flow-cookbook",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Read-only Teams reporting recipes for Power Automate and Microsoft Graph",
+  "scripts": {
+    "test": "node --test tests/catalog.test.cjs",
+    "test:browser": "playwright test",
+    "build": "node scripts/build.cjs"
+  },
+  "engines": { "node": ">=22" },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "yaml": "^2.8.1"
+  }
+}

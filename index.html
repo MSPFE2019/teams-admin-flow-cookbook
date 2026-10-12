@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Read-only Teams administration recipes for Power Automate and Microsoft Graph, with verified permissions, beginner steps and meeting artifact guidance.">
+  <title>Teams Admin Flow Cookbook</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+  </style>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/recipes.js" defer></script>
+  <script src="assets/core.js" defer></script>
+  <script src="assets/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#catalog">Skip to recipe catalog</a>
+  <header class="masthead">
+    <a class="brand" href="./">Teams / Admin Flow Cookbook</a>
+    <nav aria-label="Main">
+      <a href="#beginner">Start here</a>
+      <a href="#catalog">Recipes</a>
+      <a href="https://github.com/MSPFE2019/teams-admin-flow-cookbook">Source &amp; README</a>
+      <button id="theme" type="button" aria-label="Switch color theme">Switch theme</button>
+      <label class="text-size">Text size <select id="text-size"><option value="100">100%</option><option value="115">115%</option><option value="130">130%</option></select></label>
+    </nav>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="title">
+      <p class="eyebrow">POWER AUTOMATE + MICROSOFT GRAPH</p>
+      <h1 id="title">Less guesswork.<br>Better Teams reporting.</h1>
+      <p class="intro">A carefully scoped, read-only recipe book for team settings, channels, membership, apps, meetings and usage reports. Start with one successful GET, then build a report you can trust.</p>
+      <div class="hero-actions"><a class="primary" href="#beginner">Build your first flow</a><a href="#catalog">Explore the catalog</a></div>
+      <div class="stats"><span><strong>13</strong> vetted recipes</span><span><strong>GET only</strong> no tenant changes</span><span><strong>v1.0</strong> no beta dependencies</span></div>
+    </section>
+    <aside class="notice"><strong>This page never connects to your tenant.</strong> It builds URL examples locally; it does not execute Graph calls, collect credentials or store your IDs. Replace placeholders only in your authorized environment. Permissions shown are guidance, not a live consent check.</aside>
+    <section id="beginner" aria-labelledby="beginner-title">
+      <div class="section-heading"><div><p class="eyebrow">START SMALL, THEN SCALE</p><h2 id="beginner-title">Beginner setup: a scheduled flow and HTTP</h2></div><a href="https://github.com/MSPFE2019/teams-admin-flow-cookbook#beginner-guide">Full README guide</a></div>
+      <p>Try <a href="#joined-teams">one user's joined teams</a> first. The JSON foundation below applies to JSON recipes only; recording bytes, VTT and CSV have their own paths.</p>
+      <div class="guide">
+        <details open><summary>1. Pick an authorization route, not just a permission</summary>
+          <p><strong>Application / app-only:</strong> appropriate for unattended scheduled flows. Register an app in the same tenant/cloud, add only the recipe's relevant <em>Application</em> permission and obtain admin consent. Use <code>/users/{userId}</code>, never <code>/me</code>. A read permission does not bypass Teams policy or membership boundaries.</p>
+          <p><strong>Delegated:</strong> an approved signed-in connection/custom connector with delegated scopes and user access; not the client-secret OAuth setup below. Admin consent/roles can still be required. Personal Microsoft accounts are not supported by these recipes.</p>
+          <p><strong>Resource-specific consent (RSC):</strong> usually the narrowest application route for one team/chat, but requires a Teams app installation/manifest and resource-owner consent. <code>*.Read.Group</code>/<code>*.Read.Chat</code> is not a normal permission to add to an Entra app registration. The ordinary HTTP app-only guide uses the listed non-RSC permission; see <a href="https://learn.microsoft.com/microsoftteams/platform/graph-api/rsc/resource-specific-consent">RSC documentation</a>.</p>
+          <p><strong>Meeting APIs:</strong> app-only <code>*.Read.All</code> also needs an organizer-scoped <a href="https://learn.microsoft.com/graph/cloud-communication-online-meeting-application-access-policy">application access policy</a> configured by a tenant administrator. Allow up to 30 minutes for policy propagation.</p>
+        </details>
+        <details><summary>2. Create the schedule and authenticated HTTP GET</summary>
+          <ol>
+            <li>Power Automate: <strong>Create &gt; Scheduled cloud flow</strong>. Start weekly with a restricted test recipient. HTTP commonly needs Premium licensing and must be allowed by your environment's DLP policy.</li>
+            <li>Add the approved <strong>HTTP</strong> action, often the standard HTTP action with <strong>Active Directory OAuth</strong>. Connector screens differ; consult the exact connector docs if these fields are missing.</li>
+            <li>Method: <code>GET</code>. URI: the recipe's full URL after replacing placeholders. Body: empty. Queries: empty when already in the URI. For JSON recipes only, header <code>Accept: application/json</code>.</li>
+            <li>Authentication: <strong>Active Directory OAuth</strong>; Authority: cloud-matched login host; Tenant: Directory tenant ID; Audience: Graph base URL only (no <code>/v1.0</code>); Client ID: app client ID.</li>
+            <li>Use an approved credential/connection, certificate if supported. If a secret is required, retrieve its <strong>Value</strong> (not its ID) from an approved vault. Turn on Secure Inputs/Outputs for secret-bearing actions. Never put credentials in Compose, URLs, public source or screenshots; don't add a manual bearer token when OAuth is configured.</li>
+          </ol>
+          <p>Select the cloud in the catalog to see its matched Graph audience and Authority. Worldwide and GCC use commercial hosts; GCC High and DoD do not. Availability must be checked per API, not inferred by changing the hostname.</p>
+        </details>
+        <details><summary>3. Compose a sample, then Parse JSON</summary>
+          <ol>
+            <li>Add <strong>Compose</strong> after HTTP; Inputs = HTTP <strong>Body</strong>, or <code>body('HTTP')</code>. Save and test HTTP + Compose first.</li>
+            <li>Open Run history &gt; Compose Outputs. Use a private sample to generate the Parse JSON schema; never paste tenant data in public tickets.</li>
+            <li>Add <strong>Parse JSON</strong>: Content = HTTP Body; Schema = <strong>Generate from sample</strong>. Optional/absent/null properties need a schema that allows them. Empty samples cannot infer all fields.</li>
+            <li>For collections use <strong>Apply to each</strong> on <code>body('Parse_JSON')?['value']</code>, not the whole object. <code>item()</code> is one record; append only that record or selected fields.</li>
+            <li>For single objects, use properties directly without a value loop. Use <strong>Select</strong> and <strong>Create HTML table</strong> only on approved, minimized report columns. Remove the temporary Compose after schema testing.</li>
+          </ol>
+          <p>Action names in expressions must match your flow. Output containing HTML is not trusted markup; don't render arbitrary Teams content as executable HTML.</p>
+        </details>
+        <details><summary>4. Follow every page; don't report partial counts</summary>
+          <ol>
+            <li>Initialize string <code>nextLink</code> with the first full URI and an array for report rows <strong>outside</strong> the loop.</li>
+            <li>Add <strong>Do until</strong> <code>equals(variables('nextLink'), '')</code>. Inside it, GET <code>variables('nextLink')</code>, parse the current JSON page, and process its <code>value</code> records.</li>
+            <li>After processing, set <code>nextLink</code> to <code>coalesce(body('HTTP')?['@odata.nextLink'], '')</code>. Use the returned URL as-is; do not rebuild its skip token or re-add queries.</li>
+            <li>Set a bounded iteration count/timeout appropriate to your data; run the first page before checking completion. If the loop reaches its limit with a nonempty nextLink, fail/notify explicitly instead of sending a 'complete' report.</li>
+          </ol>
+          <p>Validate that nextLink is HTTPS on the expected Graph cloud host before sending credentials. Keep variable-updating loops sequential; don't enable parallel Apply to each when appending shared arrays. Honor <code>Retry-After</code> on 429; bound retries on transient 503/504.</p>
+        </details>
+        <details><summary>5. Meeting lookup &gt; metadata &gt; content</summary>
+          <p>Use an existing invite's join URL + organizer ID to <a href="#meeting-lookup">resolve the onlineMeeting</a>. Pass the returned Graph <code>id</code> to <a href="#recordings">list recordings</a> or <a href="#transcripts">list transcripts</a>, then pass an artifact ID to a content recipe. Calendar event, chat, joinMeetingId and onlineMeeting IDs are not interchangeable.</p>
+          <p><strong>No JSON parser for content:</strong> recordings return media bytes; transcripts return WebVTT/text. The activity report redirects to CSV. Save bytes/text with approved restricted file actions; inspect the actual connector representation and payload/timeout limits.</p>
+          <p>Recording/transcription must have been allowed and produced. Live events and standalone onlineMeeting-created meetings without calendar events are excluded here. Current transcript APIs support channel meetings with <code>OnlineMeetingTranscript.Read.All</code> + an application access policy; <code>OnlineMeetingTranscript.Read.Chat</code> does <strong>not</strong>.</p>
+        </details>
+        <details><summary>6. Troubleshoot without widening access blindly</summary>
+          <dl>
+            <dt>401</dt><dd>Check tenant, client, credential Value/expiry, Audience, Authority and cloud. Check the documented new-tenant issue for team members.</dd>
+            <dt>403</dt><dd>Check the exact permission type, consent, user access/admin role and organizer application access policy. <code>GraphAccessToTranscriptsDisabled</code> requires an admin decision; <code>SpeakerAttributionNotAllowed</code> permits only the unattributed Accept format. Don't bypass tenant controls.</dd>
+            <dt>404 / empty value</dt><dd>Check cloud support, raw/encoded IDs, organizer context, exact join URL, calendar association, expiry and artifact existence. Empty data is not necessarily an error or evidence of no activity.</dd>
+            <dt>429 / 503 / 504</dt><dd>Honor Retry-After and use bounded exponential retries. Notify the flow owner after failure; don't turn an error into an empty successful report.</dd>
+            <dt>302 / parser failure</dt><dd>Inspect Content-Type and report redirect behavior. CSV, HTML, VTT and media bytes aren't JSON. Never send Graph authorization to a preauthenticated report-download host.</dd>
+          </dl>
+        </details>
+        <details><summary>7. Security, licensing and cloud preflight</summary>
+          <p>Keep app scope small; restrict flow co-owners, run-history access, report recipients and storage. Secure Inputs/Outputs can hide samples during diagnosis; sample safely, then protect production. Track credential rotation, retention and flow-failure ownership. This public site must contain no real tenant data or flow exports with secrets.</p>
+          <p>Confirm Power Automate Premium/connector licensing, Teams organizer entitlement, recording/transcription policy, data residency and DLP with your admins. No blanket Teams Premium or E5 prerequisite is claimed for these APIs; API permissions alone do not license a meeting feature.</p>
+          <p><strong>Metering changed:</strong> Microsoft states Teams APIs stopped being metered on <strong>August 25, 2025</strong>; no Teams API billing setup is required. Old model A/B, evaluation quotas and metering advice should not be copied into new flows. See the current <a href="https://learn.microsoft.com/graph/metered-api-list">metered API list</a>.</p>
+          <p>Cloud tables and <a href="https://learn.microsoft.com/graph/teamwork-national-cloud-differences">Teams cloud implementation differences</a> both matter. Shared-channel APIs are unsupported in government/China clouds. The activity report is global-only. No beta-only API is included.</p>
+        </details>
+      </div>
+    </section>
+    <section id="catalog" tabindex="-1" aria-labelledby="catalog-title">
+      <div class="section-heading"><div><p class="eyebrow">PICK A QUESTION. BUILD A REPORT.</p><h2 id="catalog-title">The recipe catalog</h2></div><span class="verified">Docs reviewed <time datetime="2026-10-12">12 Oct 2026</time></span></div>
+      <form id="filters" role="search">
+        <label class="search">Search recipes, endpoints, permissions<input id="search" type="search" placeholder="Try owners, transcript, Read.Group..." autocomplete="off"></label>
+        <label>Category<select id="category"><option value="">All categories</option><option>Teams</option><option>Channels</option><option>Membership</option><option>Apps</option><option>Meetings</option><option>Reports</option></select></label>
+        <label>Response<select id="response"><option value="">All formats</option><option value="collection">JSON collection</option><option value="object">JSON object</option><option value="binary">Binary / media</option><option value="text">VTT / text</option><option value="csv">CSV redirect</option></select></label>
+        <label>Authorization<select id="route"><option value="application">Application (app-only)</option><option value="delegated">Delegated</option><option value="rsc">RSC alternative</option></select></label>
+        <label>Tenant cloud<select id="cloud"><option value="global">Worldwide / GCC</option><option value="us">GCC High (L4)</option><option value="dod">DoD (L5)</option><option value="china">China / 21Vianet</option></select></label>
+        <button type="reset">Reset filters</button>
+      </form>
+      <p id="cloud-info" class="cloud-info"></p>
+      <p class="caption">Cloud filtering hides unsupported endpoints. Shared-channel and tenant controls still apply. RSC filtering shows alternatives; it does not configure a Teams app.</p>
+      <p id="result-count" role="status" aria-live="polite"></p>
+      <div id="recipes" class="recipes"></div>
+      <noscript><p class="notice">JavaScript is required for the catalog and URL builder. The <a href="https://github.com/MSPFE2019/teams-admin-flow-cookbook#recipe-catalog">README</a> lists every recipe and the beginner guide.</p></noscript>
+    </section>
+  </main>
+  <footer><p>Independent community cookbook. Educational guidance, not a Microsoft-supported deployment or compliance approval. Recheck the linked API documentation before requesting consent.</p><a href="https://github.com/MSPFE2019/entra-admin-flow-cookbook">Inspired by the Entra Admin Flow Cookbook</a> · <a href="https://learn.microsoft.com/graph/permissions-reference">Graph permissions</a> · <a href="https://learn.microsoft.com/graph/deployments">Cloud deployments</a></footer>
+  <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
+</body>
+</html>

@@ -1,0 +1,10 @@
+"use strict";
+const fs = require("node:fs");
+const path = require("node:path");
+const root = path.resolve(__dirname, "..");
+const site = path.join(root, "_site");
+fs.mkdirSync(site, { recursive: true });
+fs.copyFileSync(path.join(root, "index.html"), path.join(site, "index.html"));
+fs.cpSync(path.join(root, "assets"), path.join(site, "assets"), { recursive: true });
+fs.writeFileSync(path.join(site, ".nojekyll"), "");
+console.log("Built static cookbook in _site (index.html + assets + .nojekyll).");
